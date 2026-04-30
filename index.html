@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>99ya Folklore v10.5</title>
+<style>
+  :root { --bg: #1E2428; --fg: #D8D8D2; --kamenozoki: #a2d7dd; --decor: #2F3E4A; --accent: #A65A5A; --save: #2b4a3a; }
+  body { margin:0; background:var(--bg); color:var(--fg); font-family: serif; display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+  #bar1, #bar2 { background:var(--decor); padding:8px 10px; border-bottom:1px solid var(--kamenozoki); display:flex; gap:6px; align-items:center; overflow-x:auto; }
+  #bar2 { background:rgba(0,0,0,0.4); }
+  .icon { min-width:22px; height:16px; background:white; border:1px solid var(--fg); cursor:pointer; position:relative; overflow:hidden; }
+  .icon::after { content:''; position:absolute; right:0; width:50%; height:100%; background:black; border-radius:50% 0 0 50%/50%; }
+  button, input { background:var(--decor); color:var(--kamenozoki); border:1px solid var(--kamenozoki); padding:6px 10px; font-weight:bold; cursor:pointer; font-size:11px; border-radius:2px; white-space:nowrap; }
+  button:hover { background:var(--accent); color:white; }
+  input { background:var(--bg); color:var(--fg); }
+  #main { flex:1; display:flex; overflow:hidden; position:relative; }
+  #ref { flex:1; background:rgba(0,0,0,0.2); border-right:1px solid var(--decor); display:none; flex-direction:column; min-width:250px; }
+  #ref-head { padding:5px 10px; font-size:10px; color:var(--accent); background:var(--decor); border-bottom:1px solid var(--bg); font-weight:bold; }
+  #ref-body { flex:1; padding:20px; font-size:15px; color:#999; overflow-y:auto; outline:none; white-space:pre-wrap; }
+  #edit { flex:2; display:flex; position:relative; }
+  textarea { flex:1; padding:35px; background:transparent; color:var(--fg); border:none; outline:none; font-size:18px; line-height:1.8; resize:none; font-family:inherit; box-sizing:border-box; }
+  .v-mode { writing-mode: vertical-rl; text-orientation: upright; padding: 35px 80px 35px 35px !important; }
+  #cnt { position:absolute; bottom:10px; right:10px; font-size:11px; color:var(--kamenozoki); background:rgba(47,62,74,0.9); padding:2px 8px; border-radius:4px; }
+</style>
+</head>
+<body>
+<div id="bar1">
+  <div class="icon" onclick="location.reload()"></div>
+  <button onclick="tgR()">ROT</button>
+  <input type="number" id="fs" value="18" style="width:38px;" onchange="upF()">
+  <button onclick="ld()">LOAD</button>
+  <button id="ov" onclick="ovS()" style="display:none; background:var(--save); color:white;">OVERWRITE</button>
+  <button onclick="dl()" style="background:var(--fg);color:var(--bg);border:none;">NEW SAVE</button>
+  <button onclick="ud()">UNDO</button>
+  <button onclick="rd()">REDO</button>
+  <button onclick="tgM()" id="mb" style="color:var(--accent);">REF (OFF)</button>
+</div>
+<div id="bar2">
+  <input type="text" id="fi" placeholder="Find..." style="width:70px;">
+  <button onclick="fn()">NEXT</button>
+  <input type="text" id="ri" placeholder="Rep..." style="width:70px;">
+  <button onclick="ra()">ALL</button>
+  <button onclick="cp()">COPY ALL</button>
+  <button onclick="tw()" style="color:#1DA1F2;">X</button>
+</div>
+<div id="main">
+  <div id="ref"><div id="ref-head">REFERENCE</div><div id="ref-body" contenteditable="true" oninput="svR()">Paste notes here...</div></div>
+  <div id="edit"><textarea id="ed" placeholder="..." oninput="upS()"></textarea><div id="cnt">0</div></div>
+</div>
+<script>
+  const ed=document.getElementById('ed'), rb=document.getElementById('ref-body');
+  let h=[''], rS=[], fh=null;
+
+  // --- 文字化け防止対応のLOAD機能 ---
+  async function ld(){
+    try {
+      [fh]=await window.showOpenFilePicker(); 
+      const file=await fh.getFile();
+      const buffer = await file.arrayBuffer();
+      
+      // 文字コードを判別してデコード
+      let text = new TextDecoder('utf-8').decode(buffer);
+      if (text.includes('')) { // UTF-8で化けた場合はShift-JISで再試行
+        text = new TextDecoder('shift-jis').decode(buffer);
+      }
+      
+      ed.value = text;
+      document.getElementById('ov').style.display='inline'; 
+      upS();
+    } catch(e) { console.error(e); }
+  }
+
+  async function ovS(){if(!fh)return; try{const w=await fh.createWritable(); await w.write(ed.value); await w.close(); alert('Saved');}catch(e){}}
+  function upF(){ed.style.fontSize=document.getElementById('fs').value+'px';}
+  window.onload=()=>{ed.value=localStorage.getItem('m99')||''; rb.innerText=localStorage.getItem('r99')||'Notes...'; upF(); upS();};
+  function upS(){
+    document.getElementById('cnt').innerText=ed.value.length.toLocaleString();
+    localStorage.setItem('m99', ed.value);
+    if(ed.value!==h[h.length-1]){h.push(ed.value); if(h.length>50)h.shift(); rS=[];}
+  }
+  function svR(){localStorage.setItem('r99', rb.innerText);}
+  function tgM(){const a=document.getElementById('ref'), b=document.getElementById('mb'); if(a.style.display==='flex'){a.style.display='none'; b.innerText='REF (OFF)';}else{a.style.display='flex'; b.innerText='REF (ON)';}}
+  function ud(){if(h.length>1){rS.push(h.pop()); ed.value=h[h.length-1]; upS();}}
+  function rd(){if(rS.length>0){const n=rS.pop(); h.push(n); ed.value=n; upS();}}
+  function dl(){const b=new Blob([ed.value],{type:'text/plain;charset=utf-8'}), a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download="99ya_"+Date.now()+".txt"; a.click();}
+  function tgR(){ed.classList.toggle('v-mode');}
+  function cp(){ed.select(); document.execCommand('copy');}
+  function tw(){window.open("https://x.com/intent/post?text="+encodeURIComponent(ed.value.substring(0,100)));}
+  let li=0; function fn(){const s=document.getElementById('fi').value; if(!s)return; let i=ed.value.indexOf(s,li); if(i===-1)i=ed.value.indexOf(s,0); if(i!==-1){ed.setSelectionRange(i,i+s.length); ed.focus(); li=i+s.length;}}
+  function ra(){const f=document.getElementById('fi').value, r=document.getElementById('ri').value; if(f){ed.value=ed.value.split(f).join(r); upS();}}
+</script>
+</body>
+</html>

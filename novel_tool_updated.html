@@ -304,6 +304,177 @@
     overflow: hidden;
   }
 
+  /* --- OUTLINE PANEL --- */
+  #outline-panel {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  #outline-panel.visible {
+    display: flex;
+  }
+  #outline-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+  }
+  .outline-chapter {
+    margin-bottom: 24px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .outline-chapter-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(124,106,240,0.08);
+    border-bottom: 1px solid var(--border);
+  }
+  .outline-chapter-num {
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    min-width: 28px;
+  }
+  .outline-chapter-title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg);
+    background: none;
+    border: none;
+    outline: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+  .outline-chapter-title:hover, .outline-chapter-title:focus {
+    background: rgba(255,255,255,0.06);
+  }
+  .outline-chapter-count {
+    font-size: 10px;
+    color: var(--fg3);
+    flex-shrink: 0;
+  }
+  .outline-episodes {
+    padding: 8px 0;
+  }
+  .outline-episode {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .outline-episode:last-child { border-bottom: none; }
+  .outline-episode:hover { background: var(--surface2); }
+  .outline-episode.active-ep { background: rgba(124,106,240,0.08); }
+  .outline-ep-num {
+    font-size: 10px;
+    color: var(--fg3);
+    min-width: 28px;
+    padding-top: 2px;
+    flex-shrink: 0;
+  }
+  .outline-ep-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .outline-ep-title {
+    font-size: 12px;
+    color: var(--fg);
+    background: none;
+    border: none;
+    outline: none;
+    width: 100%;
+    padding: 1px 3px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+  }
+  .outline-ep-title:hover, .outline-ep-title:focus {
+    background: rgba(255,255,255,0.06);
+  }
+  .outline-ep-memo {
+    font-size: 11px;
+    color: var(--fg2);
+    background: rgba(0,0,0,0.1);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 7px;
+    width: 100%;
+    resize: vertical;
+    min-height: 38px;
+    outline: none;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+  .outline-ep-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .outline-ep-cnt {
+    font-size: 10px;
+    color: var(--fg3);
+  }
+  .outline-ep-open {
+    font-size: 10px;
+    color: var(--accent);
+    cursor: pointer;
+    background: none;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    padding: 1px 6px;
+    opacity: 0.7;
+  }
+  .outline-ep-open:hover { opacity: 1; }
+  .outline-add-ep {
+    display: flex;
+    padding: 6px 14px;
+    border-top: 1px dashed var(--border);
+  }
+  .outline-add-ep button {
+    font-size: 11px;
+    color: var(--fg3);
+    background: none;
+    border: 1px dashed var(--border2);
+    border-radius: 4px;
+    padding: 3px 10px;
+    cursor: pointer;
+  }
+  .outline-add-ep button:hover { color: var(--accent); border-color: var(--accent); }
+  .outline-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.07);
+    flex-shrink: 0;
+  }
+  .outline-toolbar button {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--fg2);
+    cursor: pointer;
+  }
+  .outline-toolbar button:hover { color: var(--accent); border-color: var(--accent); }
+  .outline-total-info {
+    font-size: 11px;
+    color: var(--fg3);
+    margin-left: auto;
+  }
+
   /* --- EDITOR PANEL --- */
   #editor-panel {
     flex: 1;
@@ -915,6 +1086,15 @@
           <textarea id="ep-memo" placeholder="この話のプロット・覚書を自由に記入..." oninput="saveEpMemo()"></textarea>
         </div>
       </div>
+    </div>
+
+    <!-- OUTLINE PANEL -->
+    <div id="outline-panel">
+      <div class="outline-toolbar">
+        <button onclick="addChapterFromOutline()">＋ 章を追加</button>
+        <span class="outline-total-info" id="outline-total-info"></span>
+      </div>
+      <div id="outline-container"></div>
     </div>
 
     <!-- RIGHT PANEL -->
@@ -1600,6 +1780,111 @@ function ra() {
 function switchView(v) {
   document.querySelectorAll('#topbar .tab').forEach(t => t.classList.remove('active'));
   event.target.classList.add('active');
+
+  const editorPanel = document.getElementById('editor-panel');
+  const outlinePanel = document.getElementById('outline-panel');
+  const rightPanel = document.getElementById('right-panel');
+
+  if (v === 'outline') {
+    editorPanel.style.display = 'none';
+    rightPanel.style.display = 'none';
+    outlinePanel.classList.add('visible');
+    renderOutline();
+  } else {
+    editorPanel.style.display = '';
+    rightPanel.style.display = '';
+    outlinePanel.classList.remove('visible');
+  }
+}
+
+function renderOutline() {
+  const container = document.getElementById('outline-container');
+  container.innerHTML = '';
+
+  let totalChars = 0;
+  data.chapters.forEach((ch, ci) => {
+    const chTotal = ch.episodes.reduce((sum, ep) => sum + (ep.content || '').length, 0);
+    totalChars += chTotal;
+
+    const chDiv = document.createElement('div');
+    chDiv.className = 'outline-chapter';
+
+    // Chapter header
+    const header = document.createElement('div');
+    header.className = 'outline-chapter-header';
+    header.innerHTML = `
+      <span class="outline-chapter-num">第${ci+1}章</span>
+      <input class="outline-chapter-title" value="${esc(ch.title || '')}" placeholder="章タイトル..."
+        oninput="data.chapters[${ci}].title=this.value; save(); renderScenes();">
+      <span class="outline-chapter-count">${chTotal.toLocaleString()}字</span>
+      <button onclick="removeChapter(${ci}); renderOutline();" title="章を削除"
+        style="background:none;border:none;color:var(--fg3);cursor:pointer;font-size:13px;padding:2px 4px;"
+        onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--fg3)'">×</button>`;
+    chDiv.appendChild(header);
+
+    // Episodes
+    const epsDiv = document.createElement('div');
+    epsDiv.className = 'outline-episodes';
+
+    ch.episodes.forEach((ep, ei) => {
+      const isActive = ci === curChapter && ei === curEpisode;
+      const epRow = document.createElement('div');
+      epRow.className = 'outline-episode' + (isActive ? ' active-ep' : '');
+
+      const cnt = (ep.content || '').length;
+      epRow.innerHTML = `
+        <span class="outline-ep-num">${ei+1}</span>
+        <div class="outline-ep-body">
+          <input class="outline-ep-title" value="${esc(ep.title || '')}" placeholder="話タイトル..."
+            oninput="data.chapters[${ci}].episodes[${ei}].title=this.value; save(); renderScenes();">
+          <textarea class="outline-ep-memo" placeholder="プロットメモ・あらすじ..."
+            oninput="data.chapters[${ci}].episodes[${ei}].memo=this.value; save();"></textarea>
+          <div class="outline-ep-meta">
+            <span class="outline-ep-cnt">${cnt > 0 ? cnt.toLocaleString()+'字' : '未執筆'}</span>
+            <button class="outline-ep-open" onclick="openEpisodeFromOutline(${ci},${ei})">▶ 執筆</button>
+          </div>
+        </div>`;
+      // Set textarea value directly to avoid HTML escaping
+      epRow.querySelector('.outline-ep-memo').value = ep.memo || '';
+      epsDiv.appendChild(epRow);
+    });
+
+    chDiv.appendChild(epsDiv);
+
+    // Add episode button
+    const addEpDiv = document.createElement('div');
+    addEpDiv.className = 'outline-add-ep';
+    addEpDiv.innerHTML = `<button onclick="addEpisodeFromOutline(${ci})">＋ 話を追加</button>`;
+    chDiv.appendChild(addEpDiv);
+
+    container.appendChild(chDiv);
+  });
+
+  const info = document.getElementById('outline-total-info');
+  const totalEps = data.chapters.reduce((s, ch) => s + ch.episodes.length, 0);
+  info.textContent = `全${data.chapters.length}章 / ${totalEps}話 / ${totalChars.toLocaleString()}字`;
+}
+
+function openEpisodeFromOutline(ci, ei) {
+  saveCurrentScene();
+  loadEpisode(ci, ei);
+  // Switch to editor view
+  const tabs = document.querySelectorAll('#topbar .tab');
+  tabs.forEach(t => t.classList.remove('active'));
+  tabs[0].classList.add('active');
+  document.getElementById('editor-panel').style.display = '';
+  document.getElementById('right-panel').style.display = '';
+  document.getElementById('outline-panel').classList.remove('visible');
+}
+
+function addEpisodeFromOutline(ci) {
+  addEpisode(ci);
+  renderOutline();
+}
+
+function addChapterFromOutline() {
+  addChapter();
+  renderOutline();
 }
 
 function switchRP(id) {
